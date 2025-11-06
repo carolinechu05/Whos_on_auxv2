@@ -60,6 +60,10 @@ joinBtn.addEventListener('click', () => {
 nameInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') joinBtn.click();
 });
+// ───── AUX BUTTONS – DECLARE FIRST ───────────────────────────
+function safeGet(id) { return document.getElementById(id); }
+const pauseBtn  = safeGet('pauseBtn');
+const resumeBtn = safeGet('resumeBtn');
 
 // ───── INIT AUDIO ───────────────────────────────────────────────────
 function initAudio() {
