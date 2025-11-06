@@ -1,18 +1,13 @@
 /* --------------------------------------------------------------
-   AUX WHEEL – MOBILE-PERFECT CSS
+   AUX WHEEL – MOBILE-FIXED CSS (no zoom, no overlap)
    -------------------------------------------------------------- */
 :root{
-  /* colour palette */
   --bg:#0a0f1e; --ink:#fff; --blue:#3654ff; --blue2:#1b2ea8; --mut:#9fb3ff;
-  /* wheel scales with the viewport, never bigger than 560 px */
-  --wheel-size:min(78vmin,560px);
-  /* tile size – a little smaller on phones */
-  --tile:calc(var(--wheel-size) * 0.22);
+  --wheel-size:min(78vmin,460px);          /* fits any phone */
+  --tile:calc(var(--wheel-size) * 0.24);
 }
 
-/* --------------------------------------------------------------
-   GLOBAL RESET
-   -------------------------------------------------------------- */
+/* ==== GLOBAL ==== */
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;padding:0}
 body{
@@ -20,58 +15,48 @@ body{
   color:var(--ink);
   font:14px/1.45 ui-monospace,Menlo,monospace;
   overflow-x:hidden;
-  -webkit-tap-highlight-color:transparent;   /* remove tap-blue on iOS */
+  -webkit-tap-highlight-color:transparent;
 }
 
-/* --------------------------------------------------------------
-   JOIN SCREEN
-   -------------------------------------------------------------- */
+/* ==== META VIEWPORT (CRUCIAL!) ==== */
+head{display:none}                     /* hide <head> in CSS – not needed */
+meta[name="viewport"]{content:"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"}
+
+@media (max-width:480px){
+  meta[name="viewport"]{content:"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"}
+}
+
+/* ==== JOIN SCREEN ==== */
 .join-screen{
-  position:fixed;inset:0;
-  background:var(--bg);
-  display:none;align-items:center;justify-content:center;
-  z-index:9999;
+  position:fixed;inset:0;background:var(--bg);
+  display:none;align-items:center;justify-content:center;z-index:9999;
 }
 .join-screen.active{display:flex}
-
 .join-box{
-  background:#061127;
-  border:3px solid var(--blue);
-  border-radius:12px;
-  padding:30px 20px;               /* a bit less vertical padding */
-  text-align:center;
-  width:90%; max-width:340px;      /* full-width on tiny phones */
+  background:#061127;border:3px solid var(--blue);border-radius:12px;
+  padding:30px 20px;width:90%;max-width:340px;text-align:center;
 }
 .join-box h1{font-size:28px;margin:0 0 8px;color:var(--blue)}
 .join-box p{margin:0 0 16px;color:var(--mut)}
 .join-box input{
   width:100%;padding:12px;margin-bottom:14px;
-  background:#0a0f1e;border:2px solid var(--blue2);
-  color:var(--ink);border-radius:6px;
-  font:inherit;
+  background:#0a0f1e;border:2px solid var(--blue2);color:var(--ink);
+  border-radius:6px;font:inherit;
 }
 .join-box input:focus{outline:none;border-color:var(--blue)}
 
-/* --------------------------------------------------------------
-   GAME SCREEN
-   -------------------------------------------------------------- */
+/* ==== GAME SCREEN ==== */
 .game-screen{display:none}
 .game-screen.active{display:block}
 
-/* --------------------------------------------------------------
-   HEADER (top bar)
-   -------------------------------------------------------------- */
+/* ==== HEADER ==== */
 .topbar{
   display:flex;justify-content:space-between;align-items:center;
-  padding:10px 12px;background:#061127;
-  border-bottom:2px solid var(--blue2);
-  flex-wrap:wrap;                 /* wrap on very narrow screens */
-  gap:8px;
+  padding:10px 12px;background:#061127;border-bottom:2px solid var(--blue2);
+  flex-wrap:wrap;gap:8px;
 }
 .topbar-left{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .aux-info{color:var(--mut);font-size:12px}
-
-/* buttons */
 .btn,.effect-btn{
   background:var(--blue);border:2px solid #fff;color:#000;
   padding:6px 10px;cursor:pointer;
@@ -85,9 +70,7 @@ body{
 .ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .topbar input[type="range"]{vertical-align:middle;width:80px}
 
-/* --------------------------------------------------------------
-   STATUS BAR
-   -------------------------------------------------------------- */
+/* ==== STATUS BAR ==== */
 .status-bar{
   background:#0b1426;border-bottom:1px solid var(--blue2);
   padding:6px 12px;display:flex;justify-content:space-between;
@@ -96,35 +79,28 @@ body{
 #countdown{color:#ffeb3b;font-weight:bold}
 #nowPlaying{color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* --------------------------------------------------------------
-   STAGE – WHEEL
-   -------------------------------------------------------------- */
+/* ==== STAGE – WHEEL ==== */
 .stage{
   position:relative;
-  min-height:calc(100vh - 140px);   /* leave room for top + bottom bars */
+  min-height:calc(100vh - 140px);        /* room for top + bottom bars */
   display:grid;place-items:center;
   padding:12px;
 }
 .wheel-wrap{
   width:var(--wheel-size);height:var(--wheel-size);
   position:relative;display:grid;place-items:center;
+  z-index:2;                             /* wheel above everything */
 }
-
-/* background disk */
 .disk{
   position:absolute;inset:0;border-radius:50%;
   background:radial-gradient(circle at 50% 45%,#0f1a36 0 56%,#0a1226 57% 100%);
   border:6px solid rgba(159,179,255,.25);
   outline:2px dashed rgba(159,179,255,.35);
 }
-
-/* rotating ring */
 .wheel{
   position:relative;width:100%;height:100%;
   animation:spin 24s linear infinite;
 }
-
-/* tiles */
 .tile{
   position:absolute;left:50%;top:50%;
   width:var(--tile);height:var(--tile);
@@ -145,10 +121,10 @@ body{
 }
 .tile.active .frame{filter:drop-shadow(0 0 .9rem rgba(255,255,255,.45))}
 
-/* center hub */
+/* ==== CENTER HUB ==== */
 .hub{
   position:absolute;inset:0;display:grid;place-items:center;
-  text-align:center;pointer-events:none;
+  text-align:center;pointer-events:none;z-index:3;
 }
 .avatar{
   width:72px;height:72px;border-radius:50%;border:3px solid #fff;
@@ -159,16 +135,11 @@ body{
 .artist{color:var(--mut);font-size:13px}
 .by{margin-top:3px;font-size:11px;color:#c6d2ff}
 
-/* --------------------------------------------------------------
-   VOTING PANEL
-   -------------------------------------------------------------- */
+/* ==== VOTING PANEL ==== */
 .voting-panel{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  background:#061127;border:3px solid var(--blue);
-  border-radius:12px;padding:20px;
-  display:none;z-index:100;
-  width:90%;max-width:340px;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#061127;border:3px solid var(--blue);border-radius:12px;
+  padding:20px;display:none;z-index:100;width:90%;max-width:340px;
 }
 .voting-panel.active{display:block}
 .voting-panel h3{margin:0 0 14px;color:var(--blue);text-align:center}
@@ -182,37 +153,31 @@ body{
 .vote-btn:hover{border-color:var(--blue);background:#0f1a36}
 .vote-btn.selected{background:var(--blue);color:#000;border-color:#fff}
 
-/* --------------------------------------------------------------
-   RATING DOCK (emoji bar)
-   -------------------------------------------------------------- */
+/* ==== RATING DOCK ==== */
 .dock{
   position:fixed;left:12px;right:12px;bottom:12px;
   border:2px solid var(--blue);background:#061127;
   padding:8px 10px;display:none;
-  justify-content:space-between;align-items:center;gap:10px;
-  z-index:50;
+  justify-content:space-between;align-items:center;gap:10px;z-index:50;
 }
 .dock.active{display:flex}
 .dock-title{color:#9fb3ff;text-transform:uppercase;font-weight:bold;font-size:12px}
 .faces{display:flex;gap:6px}
 .faces button{
-  font-size:32px;line-height:1;
-  background:#000;border:2px solid #fff;border-radius:12px;
-  padding:6px 8px;cursor:pointer;transition:all .15s;
+  font-size:32px;line-height:1;background:#000;border:2px solid #fff;
+  border-radius:12px;padding:6px 8px;cursor:pointer;transition:all .15s;
 }
 .faces button:hover{transform:translateY(-2px);box-shadow:0 0 .8rem rgba(159,179,255,.5)}
 .faces button:active{transform:scale(1.1)}
 
-/* --------------------------------------------------------------
-   PLAYERS SIDEBAR
-   -------------------------------------------------------------- */
+/* ==== PLAYERS SIDEBAR – NO OVERLAP ==== */
 .players-sidebar{
   position:fixed;right:0;top:50px;
   width:260px;background:#061127;
   border-left:2px solid var(--blue2);
   border-bottom:2px solid var(--blue2);
   padding:14px;max-height:calc(100vh - 50px);
-  overflow-y:auto;z-index:10;
+  overflow-y:auto;z-index:1;               /* behind wheel */
 }
 .players-sidebar h3{
   margin:0 0 10px;color:var(--blue);
@@ -231,22 +196,15 @@ body{
   border-color:#4caf50;background:#0d1f0d;
 }
 
-/* --------------------------------------------------------------
-   AUX CONTROLS (pause / resume)
-   -------------------------------------------------------------- */
+/* ==== AUX CONTROLS ==== */
 .aux-controls{
-  margin:16px auto;text-align:center;
-  display:none;
+  margin:16px auto;text-align:center;display:none;
 }
 .aux-controls.active{display:block}
 
-/* --------------------------------------------------------------
-   ANIMATIONS
-   -------------------------------------------------------------- */
+/* ==== ANIMATIONS ==== */
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes spin-rev{to{transform:rotate(-360deg)}}
-
-/* notifications */
 @keyframes slideDown{
   from{opacity:0;transform:translate(-50%,-20px)}
   to{opacity:1;transform:translate(-50%,0)}
@@ -257,10 +215,10 @@ body{
 }
 
 /* --------------------------------------------------------------
-   RESPONSIVE – MOBILE FIRST
+   RESPONSIVE – MOBILE FIRST (NO ZOOM, NO OVERLAP)
    -------------------------------------------------------------- */
-@media (max-width: 480px){
-  :root{--wheel-size:min(80vmin,460px);--tile:calc(var(--wheel-size)*0.24)}
+@media (max-width:480px){
+  :root{--wheel-size:min(80vmin,420px);--tile:calc(var(--wheel-size)*0.26)}
   .topbar{padding:8px 10px;font-size:12px}
   .topbar input[type="range"]{width:60px}
   .status-bar{font-size:12px;padding:5px 10px}
@@ -272,19 +230,27 @@ body{
   .vote-btn{padding:9px 12px;font-size:13px}
   .dock{left:8px;right:8px;bottom:8px;padding:6px 8px}
   .faces button{font-size:28px;padding:5px 7px}
-  .players-sidebar{width:100%;top:auto;bottom:0;
-    max-height:28vh;border-left:none;border-top:2px solid var(--blue2);
-    padding:10px}
+
+  /* PLAYER LIST → BOTTOM DRAWER (behind wheel) */
+  .players-sidebar{
+    width:100%;top:auto;bottom:0;
+    max-height:26vh;border-left:none;
+    border-top:2px solid var(--blue2);
+    padding:10px;z-index:1;
+  }
 }
 
-/* larger phones – fine-tune */
+/* tablets & larger phones */
 @media (min-width:481px) and (max-width:768px){
-  .players-sidebar{width:100%;top:auto;bottom:0;
-    max-height:30vh;border-left:none;border-top:2px solid var(--blue2)}
-  .dock{bottom:auto;top:calc(100vh - 30vh - 70px)}
+  .players-sidebar{
+    width:100%;top:auto;bottom:0;
+    max-height:28vh;border-left:none;
+    border-top:2px solid var(--blue2);z-index:1;
+  }
+  .dock{bottom:auto;top:calc(100vh - 28vh - 70px)}
 }
 
-/* keep the original desktop sidebar for >768px */
+/* desktop – keep original sidebar */
 @media (min-width:769px){
-  .players-sidebar{width:260px;top:50px}
+  .players-sidebar{width:260px;top:50px;z-index:1}
 }
