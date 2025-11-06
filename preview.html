@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>AUX Beholder — Fixed Wheel + Cover List</title>
+<style>
+  :root{
+    --bg:#0a0f1e; --ink:#fff; --blue:#3654ff; --blue2:#1b2ea8; --mut:#9fb3ff;
+    --wheel-size:min(62vmin,560px); --tile:110px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 ui-monospace,Menlo,monospace}
+  header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#061127;border-bottom:2px solid var(--blue2)}
+  .btn{background:var(--blue);border:2px solid #fff;color:#000;padding:6px 10px}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:14px;padding:14px}
+  .panel{border:2px solid var(--blue);background:#081325}
+  .head{padding:8px 10px;background:var(--blue);color:#000;text-transform:uppercase;font-weight:bold}
+  .body{padding:12px}
+
+  /* ------- FIXED WHEEL ------- */
+  .stage{position:relative;min-height:65vh}
+  .wheel-wrap{
+    width:var(--wheel-size);height:var(--wheel-size);position:absolute;inset:0;margin:auto;
+    display:grid;place-items:center;
+  }
+  /* background disk */
+  .disk{
+    position:absolute;inset:0;border-radius:50%;
+    background: radial-gradient(circle at 50% 45%, #0f1a36 0 56%, #0a1226 57% 100%);
+    border:6px solid rgba(159,179,255,.25);
+    outline:2px dashed rgba(159,179,255,.35);
+  }
+  /* tiles are placed around the disk; they never rotate */
+  .wheel{position:relative;width:100%;height:100%}
+  .tile{
+    position:absolute;left:50%;top:50%;
+    width:var(--tile);height:var(--tile);
+    transform-origin:0 0;
+    /* position each with rotate+translate, but add a child that counter-rotates 0deg
+       so the image is always upright */
+  }
+  .tile > .frame{
+    width:100%;height:100%;
+    transform:rotate(0deg); /* always upright */
+    transition:filter .15s, transform .15s;
+  }
+  .tile img{
+    width:100%;height:100%;object-fit:cover;background:#0b1220;outline:3px solid #fff;
+    display:block;
+  }
+  .tile.active .frame{filter:drop-shadow(0 0 .8rem rgba(255,255,255,.35))}
+  .hub{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none}
+  .avatar{width:84px;height:84px;border-radius:50%;border:3px solid #fff;background:#000;display:grid;place-items:center;font-weight:bold;margin-bottom:8px}
+  .song{font-weight:700}
+  .artist{color:var(--mut)}
+  .by{margin-top:4px;font-size:12px;color:#c6d2ff}
+
+  /* ------- RIGHT: stacked album covers (no overlap) ------- */
+  .search{width:100%;padding:9px;border:2px solid #fff;background:#000;color:#fff;margin-bottom:10px}
+  .covers{max-height:calc(100vh - 220px);overflow:auto;display:grid;gap:10px}
+  .card{
+    position:relative;border:2px solid rgba(255,255,255,.2);background:#050c1a;cursor:pointer;
+    transition:transform .12s, box-shadow .12s, border-color .12s;
+  }
+  .card:active{transform:scale(.98)}
+  .card.pop{transform:scale(1.03);box-shadow:0 0 1rem rgba(159,179,255,.6);border-color:#fff}
+  .card img{width:100%;height:88px;object-fit:cover;display:block}
+  .overlay{
+    position:absolute;left:0;right:0;bottom:0;
+    padding:6px 8px;
+    background:linear-gradient(180deg,transparent,rgba(0,0,0,.8) 60%,rgba(0,0,0,.95));
+    color:#fff
+  }
+  .title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .artistSmall{color:#d7e0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* bottom dock */
+  footer{position:fixed;left:14px;right:14px;bottom:14px;border:2px solid var(--blue);
+         background:#061127;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .faces button{font-size:28px;line-height:1;background:#000;border:2px solid #fff;border-radius:10px;padding:6px 10px;margin:0 4px}
+  .faces button:hover{transform:translateY(-1px)}
+  @media (max-width:1024px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div><strong>AUX BEHOLDER</strong></div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button class="btn" id="start">Start</button>
+    <label>Vol <input id="vol" type="range" min="0" max="100" value="80"></label>
+    <span id="volV">80%</span>
+  </div>
+</header>
+
+<main class="grid">
+  <!-- LEFT: FIXED WHEEL -->
+  <section class="panel">
+    <div class="head">Now Playing</div>
+    <div class="body">
+      <div class="stage">
+        <div class="wheel-wrap">
+          <div class="disk" aria-hidden="true"></div>
+          <div class="wheel" id="wheel"></div>
+        </div>
+        <div class="hub">
+          <div class="avatar">JS</div>
+          <div class="song" id="songName">—</div>
+          <div class="artist" id="artistName">—</div>
+          <div class="by" id="byLine">Selected by —</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: stacked album covers -->
+  <aside class="panel">
+    <div class="head">Jukebox</div>
+    <div class="body">
+      <input class="search" id="q" placeholder="Search title or artist…"/>
+      <div id="list" class="covers"></div>
+      <div style="margin-top:10px;color:#c6d2ff">
+        <strong>People & Votes</strong>
+        <ul style="margin:6px 0 0 18px">
+          <li><strong>Jane (You)</strong> — 2 votes</li>
+          <li>Ryo — 1 vote</li>
+          <li>Yuna — 0 votes</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <div style="color:#9fb3ff;text-transform:uppercase;font-weight:bold">Rate the AUX Holder</div>
+  <div class="faces" id="rateDock">
+    <button data-score="1">😖</button>
+    <button data-score="2">😕</button>
+    <button data-score="3">😐</button>
+    <button data-score="4">🙂</button>
+    <button data-score="5">🤩</button>
+  </div>
+</footer>
+
+<script>
+  /* --- data --- */
+  const songs = [
+    { title:"Silly Love Songs",      artist:"Wings",              coverImage:"./image_file/1976-silly-love-songs.jpg",  by:"Jane" },
+    { title:"Tonight’s The Night",   artist:"Rod Stewart",        coverImage:"./image_file/1977-tonights-the-night.jpg", by:"Ryo" },
+    { title:"Shadow Dancing",        artist:"Andy Gibb",          coverImage:"./image_file/1978-shadow-dancing.jpg",    by:"Yuna" },
+    { title:"My Sharona",            artist:"The Knack",          coverImage:"./image_file/1979-my-sharona.jpg",        by:"Jane" },
+    { title:"Call Me",               artist:"Blondie",            coverImage:"./image_file/1980-call-me.jpg",           by:"Ryo" },
+    { title:"Bette Davis Eyes",      artist:"Kim Carnes",         coverImage:"./image_file/1981-bette-davis-eyes.jpg",  by:"Jane" },
+    { title:"Physical",              artist:"Olivia Newton-John", coverImage:"./image_file/1982-physical.jpg",          by:"Yuna" },
+    { title:"Every Breath You Take", artist:"The Police",         coverImage:"./image_file/1983-every-breath-you-take.jpg", by:"Jane" },
+    { title:"When Doves Cry",        artist:"Prince",             coverImage:"./image_file/1984-when-doves-cry.jpg",    by:"Ryo" },
+    { title:"Careless Whisper",      artist:"George Michael",     coverImage:"./image_file/1985-careless-whisper.jpg",  by:"Yuna" }
+  ];
+
+  /* --- elements --- */
+  const wheel = document.getElementById('wheel');
+  const list  = document.getElementById('list');
+  const q     = document.getElementById('q');
+  const song  = document.getElementById('songName');
+  const artist= document.getElementById('artistName');
+  const by    = document.getElementById('byLine');
+  const vol   = document.getElementById('vol');
+  const volV  = document.getElementById('volV');
+
+  /* --- fixed wheel: pre-place tiles around circle, never rotate --- */
+  const N = songs.length, step = 360/N;
+
+  function placeTiles(active=0){
+    wheel.innerHTML = '';
+    for(let i=0;i<N;i++){
+      const a = step*i;
+      const tile = document.createElement('div');
+      tile.className = 'tile' + (i===active?' active':'');
+      // position around circle (no counter-rotation needed because we keep frame upright)
+      tile.style.transform = `rotate(${a}deg) translateY(calc(var(--wheel-size)/-2.25))`;
+      tile.innerHTML = `<div class="frame"><img src="${songs[i].coverImage}" alt=""></div>`;
+      tile.addEventListener('click', ()=>select(i));
+      wheel.appendChild(tile);
+    }
+  }
+
+  function setCenter(s){
+    song.textContent   = s.title;
+    artist.textContent = s.artist;
+    by.textContent     = `Selected by ${s.by}`;
+  }
+
+  function select(i){
+    placeTiles(i);
+    setCenter(songs[i]);
+  }
+
+  /* --- right list --- */
+  function card(s, i){
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `
+      <img src="${s.coverImage}" alt="">
+      <div class="overlay">
+        <div class="title">${s.title}</div>
+        <div class="artistSmall">${s.artist}</div>
+      </div>`;
+    el.addEventListener('click', ()=>{
+      el.classList.add('pop'); setTimeout(()=>el.classList.remove('pop'), 220);
+      select(i);
+      // scroll to show selection in wheel is static — no movement needed
+    });
+    return el;
+  }
+  function paintList(arr){
+    list.innerHTML = '';
+    arr.forEach((s,i)=> list.appendChild(card(s,i)));
+  }
+
+  // init
+  placeTiles(0);
+  setCenter(songs[0]);
+  paintList(songs);
+
+  // search
+  q.addEventListener('input', e=>{
+    const t = e.target.value.toLowerCase();
+    paintList(songs.filter(s=> s.title.toLowerCase().includes(t) || s.artist.toLowerCase().includes(t)));
+  });
+
+  // volume readout
+  vol.addEventListener('input', e=> volV.textContent = `${e.target.value}%`);
+</script>
+</body>
+</html>
