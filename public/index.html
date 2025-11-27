@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>AUX Wheel – Cyber Blue</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <!-- Join Screen -->
+  <div id="joinScreen" class="join-screen active">
+    <div class="join-box">
+      <h1>🎵 AUX WHEEL</h1>
+      <p>Enter your name to join the game</p>
+      <input type="text" id="nameInput" placeholder="Your name" maxlength="15" />
+      <button class="btn" id="joinBtn">Join Game</button>
+    </div>
+  </div>
+
+  <!-- Main Game -->
+  <div id="gameScreen" class="game-screen">
+    <header class="topbar">
+      <div class="topbar-left">
+        <strong>AUX WHEEL</strong>
+        <span id="auxInfo" class="aux-info"></span>
+      </div>
+      <div class="ctl">
+        <button class="btn" id="start">Start Voting</button>
+        <label>Vol <input id="vol" type="range" min="0" max="100" value="80"></label>
+        <span id="volV">80%</span>
+      </div>
+    </header>
+    <div id="auxControls" style="display:none; margin:20px; text-align:center;">
+      <h3>Remix Controls</h3>
+      
+      <!-- Progress bar -->
+      <div style="width:280px; margin:10px auto; height:6px; background:#0a0f1e; border:2px solid #3654ff; border-radius:6px; overflow:hidden;">
+        <div id="progressBar" style="width:0%; height:100%; background:#3654ff; transition:width 0.2s linear;"></div>
+      </div>
+
+      <button id="pauseBtn"   class="effect-btn">Pause</button>
+      <button id="resumeBtn"  class="effect-btn">Resume</button>
+      <button id="shuffleBtn" class="effect-btn">Shuffle Songs</button>
+    </div>
+    <!-- Countdown & Status -->
+    <div id="statusBar" class="status-bar">
+      <span id="countdown"></span>
+      <span id="nowPlaying"></span>
+    </div>
+
+    <main class="stage">
+      <div class="wheel-wrap">
+        <div class="disk" aria-hidden="true"></div>
+        <div class="wheel" id="wheel"></div>
+      </div>
+
+      <!-- Center hub (song info) -->
+      <div class="hub">
+        <div class="avatar" id="auxAvatar">?</div>
+        <div class="song" id="songName">—</div>
+        <div class="artist" id="artistName">—</div>
+        <div class="by" id="byLine">Click Start to begin</div>
+      </div>
+    </main>
+
+    <!-- Voting Phase -->
+    <div id="votingPanel" class="voting-panel">
+      <h3>Vote for the next AUX holder</h3>
+      <div id="votingButtons" class="voting-buttons"></div>
+    </div>
+
+    <!-- Rating dock -->
+    <footer class="dock" id="ratingDock">
+      <div class="dock-title">Rate the AUX Holder (Double Click)</div>
+      <div class="faces" id="rateDock">
+        <button data-score="1" aria-label="1/5">😖</button>
+        <button data-score="2" aria-label="2/5">😕</button>
+        <button data-score="3" aria-label="3/5">😐</button>
+        <button data-score="4" aria-label="4/5">🙂</button>
+        <button data-score="5" aria-label="5/5">🤩</button>
+      </div>
+    </footer>
+
+    <!-- Players List Sidebar -->
+    <aside class="players-sidebar">
+      <h3>Players</h3>
+      <ul id="playersList"></ul>
+    </aside>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
