@@ -16,6 +16,16 @@ body{
   font:14px/1.45 ui-monospace,Menlo,monospace;
   overflow-x:hidden;
   -webkit-tap-highlight-color:transparent;
+  cursor: url('aux-cursor.png') 8 8, auto;
+}
+
+/* ==== AUX CABLE CURSOR HOVER STATES ==== */
+.tile:hover,
+.btn:hover,
+.effect-btn:hover,
+.vote-btn:hover,
+.faces button:hover{
+  cursor: url('aux-cursor.png') 8 8, pointer;
 }
 
 /* ==== META VIEWPORT (CRUCIAL!) ==== */
@@ -30,6 +40,7 @@ meta[name="viewport"]{content:"width=device-width,initial-scale=1,maximum-scale=
 .join-screen{
   position:fixed;inset:0;background:var(--bg);
   display:none;align-items:center;justify-content:center;z-index:9999;
+  flex-direction:column;gap:20px;
 }
 .join-screen.active{display:flex}
 .join-box{
@@ -44,6 +55,18 @@ meta[name="viewport"]{content:"width=device-width,initial-scale=1,maximum-scale=
   border-radius:6px;font:inherit;
 }
 .join-box input:focus{outline:none;border-color:var(--blue)}
+
+/* ==== INSTRUCTIONS LINK ON JOIN SCREEN ==== */
+.join-instructions-link{
+  color:var(--blue);
+  text-decoration:underline;
+  cursor:pointer;
+  font-size:13px;
+  transition:color .15s;
+}
+.join-instructions-link:hover{
+  color:#4a6aff;
+}
 
 /* ==== GAME SCREEN ==== */
 .game-screen{display:none}
@@ -139,7 +162,8 @@ meta[name="viewport"]{content:"width=device-width,initial-scale=1,maximum-scale=
 .voting-panel{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
   background:#061127;border:3px solid var(--blue);border-radius:12px;
-  padding:20px;display:none;z-index:100;width:90%;max-width:340px;
+  padding:20px;display:none;z-index:99999;width:90%;max-width:340px;
+  max-height:80vh;overflow-y:auto;
 }
 .voting-panel.active{display:block}
 .voting-panel h3{margin:0 0 14px;color:var(--blue);text-align:center}
@@ -152,6 +176,18 @@ meta[name="viewport"]{content:"width=device-width,initial-scale=1,maximum-scale=
 }
 .vote-btn:hover{border-color:var(--blue);background:#0f1a36}
 .vote-btn.selected{background:var(--blue);color:#000;border-color:#fff}
+
+/* ==== INSTRUCTIONS PANEL - SCROLLABLE ==== */
+#instructionsPanel{
+  max-height:85vh;
+  overflow-y:auto;
+  z-index:10000;
+}
+#instructionsPanel #closeInstructions{
+  position:sticky;
+  top:0;
+  z-index:10;
+}
 
 /* ==== RATING DOCK ==== */
 .dock{
@@ -233,7 +269,7 @@ meta[name="viewport"]{content:"width=device-width,initial-scale=1,maximum-scale=
   .hub .avatar{width:60px;height:60px;font-size:20px}
   .song{font-size:14px}
   .artist,.by{font-size:12px}
-  .voting-panel{padding:16px}
+  .voting-panel{padding:16px;max-height:90vh}
   .vote-btn{padding:9px 12px;font-size:13px}
   .dock{left:8px;right:8px;bottom:8px;padding:6px 8px}
   .faces button{font-size:28px;padding:5px 7px}

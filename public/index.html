@@ -8,6 +8,41 @@
   <link rel="icon" href="data:,">
 </head>
 <body>
+  <!-- Instructions Panel -->
+  <div class="voting-panel" id="instructionsPanel" style="display:none;">
+    <button class="btn" id="closeInstructions" style="position:absolute;top:10px;right:10px;padding:4px 8px;">✕</button>
+    
+    <h3>🎵 HOW TO PLAY WHO'S ON AUX</h3>
+    
+    <div style="text-align:left;color:var(--mut);line-height:1.6;">
+      <p><strong style="color:var(--blue);">1. JOIN THE GAME</strong><br>
+      Enter your name to join the wheel. Your profile appears on the spinning wheel.</p>
+      
+      <p><strong style="color:var(--blue);">2. VOTE FOR AUX CONTROL</strong><br>
+      Click on someone's tile on the wheel to vote for them. The person with the most votes gets aux privileges!</p>
+      
+      <p><strong style="color:var(--blue);">3. THE WINNER CONTROLS THE MUSIC</strong><br>
+      Whoever wins gets to pick songs. Their avatar appears in the center hub.</p>
+      
+      <p><strong style="color:var(--blue);">4. RATE THE MUSIC</strong><br>
+      Use the emoji reactions at the bottom (😖 😕 😐 🙂 🤩) to rate each song as it plays.</p>
+      
+      <p><strong style="color:var(--blue);">5. AUX HOLDER POWERS</strong><br>
+      If you're on aux, you'll see controls appear to:<br>
+      • Click song tiles on the wheel to play them<br>
+      • Pause/Resume playback<br>
+      • Adjust volume for everyone</p>
+      
+      <div style="background:#0a0f1e;padding:12px;border-radius:6px;margin-top:12px;border:1px solid var(--blue2);">
+        <strong style="color:#ffeb3b;">⚡ PRO TIPS:</strong><br>
+        • Vote wisely - they control the vibe!<br>
+        • Watch the countdown for voting time<br>
+        • React honestly to songs<br>
+        • Aux holder rotates based on votes
+      </div>
+    </div>
+  </div>
+
   <!-- Join Screen -->
   <div id="joinScreen" class="join-screen active">
     <div class="join-box">
@@ -16,6 +51,7 @@
       <input type="text" id="nameInput" placeholder="Your name" maxlength="15" />
       <button class="btn" id="joinBtn">Join Game</button>
     </div>
+    <span class="join-instructions-link" id="joinInstructionsBtn">How to Play</span>
   </div>
 
   <!-- Main Game -->
@@ -27,21 +63,31 @@
       </div>
       <div class="ctl">
         <button class="btn" id="start">Start Voting</button>
+        <button class="btn" id="instructionsBtn">How to Play</button>
         <label>Vol <input id="vol" type="range" min="0" max="100" value="80"></label>
         <span id="volV">80%</span>
       </div>
     </header>
     <div id="auxControls" style="display:none; margin:20px; text-align:center;">
-      <h3>Remix Controls</h3>
-      
-      <!-- Progress bar -->
-      <div style="width:280px; margin:10px auto; height:6px; background:#0a0f1e; border:2px solid #3654ff; border-radius:6px; overflow:hidden;">
-        <div id="progressBar" style="width:0%; height:100%; background:#3654ff; transition:width 0.2s linear;"></div>
-      </div>
-
-      <button id="pauseBtn"   class="effect-btn">Pause</button>
-      <button id="resumeBtn"  class="effect-btn">Resume</button>
-      <button id="shuffleBtn" class="effect-btn">Shuffle Songs</button>
+      <div id="auxControls" style="display:none; margin:20px; text-align:center;">
+  <h3 style="color:var(--blue);margin-bottom:12px;">🎧 You're on AUX</h3>
+  
+  <!-- Progress bar from her version -->
+  <div style="width:280px; margin:10px auto; height:6px; background:#0a0f1e; border:2px solid #3654ff; border-radius:6px; overflow:hidden;">
+    <div id="progressBar" style="width:0%; height:100%; background:#3654ff; transition:width 0.2s linear;"></div>
+  </div>
+  
+  <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
+    <button id="pauseBtn" class="effect-btn">⏸ Pause</button>
+    <button id="resumeBtn" class="effect-btn">▶ Resume</button>
+    <button id="shuffleBtn" class="effect-btn">Shuffle Songs</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="color:var(--mut);">Volume:</label>
+      <input id="auxVol" type="range" min="0" max="100" value="80" style="width:120px;">
+      <span id="auxVolV" style="color:var(--ink);min-width:40px;">80%</span>
+    </div>
+  </div>
+</div>
     </div>
     <!-- Countdown & Status -->
     <div id="statusBar" class="status-bar">
@@ -91,5 +137,75 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="app.js"></script>
+  
+  <!-- INSTRUCTIONS SCRIPT - Runs immediately -->
+  <script>
+    (function() {
+      // Get elements
+      const instructionsPanel = document.getElementById('instructionsPanel');
+      const joinInstructionsBtn = document.getElementById('joinInstructionsBtn');
+      const instructionsBtn = document.getElementById('instructionsBtn');
+      const closeInstructions = document.getElementById('closeInstructions');
+      
+      console.log('Instructions loaded:', {
+        panel: instructionsPanel,
+        joinBtn: joinInstructionsBtn,
+        gameBtn: instructionsBtn,
+        closeBtn: closeInstructions
+      });
+      
+      // Function to show instructions
+      function showInstructions(e) {
+        console.log('showInstructions called');
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (instructionsPanel) {
+          instructionsPanel.style.display = 'block';
+          instructionsPanel.classList.add('active');
+          console.log('Panel should be visible now');
+        }
+      }
+      
+      // Function to hide instructions
+      function hideInstructions(e) {
+        console.log('hideInstructions called');
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (instructionsPanel) {
+          instructionsPanel.style.display = 'none';
+          instructionsPanel.classList.remove('active');
+        }
+      }
+      
+      // Add event listeners immediately
+      if (joinInstructionsBtn) {
+        joinInstructionsBtn.onclick = showInstructions;
+        console.log('Join button listener added');
+      }
+      
+      if (instructionsBtn) {
+        instructionsBtn.onclick = showInstructions;
+        console.log('Game button listener added');
+      }
+      
+      if (closeInstructions) {
+        closeInstructions.onclick = hideInstructions;
+        console.log('Close button listener added');
+      }
+      
+      // Click outside to close
+      if (instructionsPanel) {
+        instructionsPanel.onclick = function(e) {
+          if (e.target === instructionsPanel) {
+            hideInstructions();
+          }
+        };
+      }
+    })();
+  </script>
 </body>
 </html>

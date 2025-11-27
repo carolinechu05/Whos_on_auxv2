@@ -24,6 +24,9 @@ const playersList = document.getElementById('playersList');
 const countdown = document.getElementById('countdown');
 const nowPlaying = document.getElementById('nowPlaying');
 const auxInfo = document.getElementById('auxInfo');
+const auxControls = document.getElementById('auxControls');
+const auxVol = document.getElementById('auxVol');
+const auxVolV = document.getElementById('auxVolV');
 
 // 3) CLIENT-SIDE SOCKET CONNECTION
 const socket = io();
@@ -68,7 +71,11 @@ nameInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') joinBtn.click();
 });
 
+<<<<<<< HEAD
 // ───── AUX BUTTONS – DECLARE FIRST ─────────────────────────────────────────
+=======
+// ───── AUX BUTTONS – DECLARE FIRST ───────────────────────────
+>>>>>>> 3aa24c6 (Add instructions popup, aux controls, and custom cursor)
 function safeGet(id) { return document.getElementById(id); }
 const pauseBtn  = safeGet('pauseBtn');
 const resumeBtn = safeGet('resumeBtn');
@@ -209,7 +216,40 @@ if (vol && volV) {
   });
 }
 
+<<<<<<< HEAD
 // ───── AUX HELPERS ────────────────────────────────────────────────────────────
+=======
+// Aux holder volume control
+if (auxVol && auxVolV) {
+  auxVol.addEventListener('input', e => {
+    auxVolV.textContent = `${e.target.value}%`;
+    if (gainNode) gainNode.gain.value = e.target.value / 100;
+    socket.emit('volume', e.target.value / 100);
+  });
+}
+
+// Pause button
+if (pauseBtn) {
+  pauseBtn.addEventListener('click', () => {
+    if (isAux() && audio) {
+      audio.pause();
+      socket.emit('pause');
+    }
+  });
+}
+
+// Resume button
+if (resumeBtn) {
+  resumeBtn.addEventListener('click', () => {
+    if (isAux() && audio) {
+      audio.play().catch(() => {});
+      socket.emit('resume', { timestamp: Date.now() });
+    }
+  });
+}
+
+// ───── AUX HELPERS ──────────────────────────────────────────────────
+>>>>>>> 3aa24c6 (Add instructions popup, aux controls, and custom cursor)
 function isAux() { return aux && aux.id === myId; }
 
 // ───── SOCKET EVENTS ──────────────────────────────────────────────────────────
@@ -452,6 +492,15 @@ function updateUI() {
     } else {
       startBtn.disabled = false;
       startBtn.textContent = 'Start Voting';
+    }
+  }
+  
+  // Show/hide aux controls
+  if (auxControls) {
+    if (isAux()) {
+      auxControls.style.display = 'block';
+    } else {
+      auxControls.style.display = 'none';
     }
   }
   
