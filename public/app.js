@@ -54,7 +54,7 @@ function formatTime(seconds) {
   return `${mins}min ${secs < 10 ? '0' : ''}${secs} secs`;
 }
 
-// ───── JOIN GAME ──────────────────────────────────────────────────────────────
+// ───── JOIN GAME ────────────────────────────────────────────────────
 joinBtn.addEventListener('click', () => {
   const name = nameInput.value.trim();
   if (!name) {
@@ -71,16 +71,12 @@ nameInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') joinBtn.click();
 });
 
-<<<<<<< HEAD
-// ───── AUX BUTTONS – DECLARE FIRST ─────────────────────────────────────────
-=======
 // ───── AUX BUTTONS – DECLARE FIRST ───────────────────────────
->>>>>>> 3aa24c6 (Add instructions popup, aux controls, and custom cursor)
 function safeGet(id) { return document.getElementById(id); }
 const pauseBtn  = safeGet('pauseBtn');
 const resumeBtn = safeGet('resumeBtn');
 
-// ───── INIT AUDIO ──────────────────────────────────────────────────────────────
+// ───── INIT AUDIO ───────────────────────────────────────────────────
 function initAudio() {
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   gainNode = audioCtx.createGain();
@@ -98,7 +94,7 @@ document.addEventListener('click', () => {
   }
 }, { once: false });
 
-// ───── AUDIO ELEMENT ──────────────────────────────────────────────────────────
+// ───── AUDIO ELEMENT ────────────────────────────────────────────────
 let audio = null;
 let progressInterval = null;
 
@@ -148,7 +144,7 @@ function reconnectAudioGraph() {
   source.connect(gainNode);
 }
 
-// ───── BUILD WHEEL FROM SERVER SONGS ──────────────────────────────────────────
+// ───── BUILD WHEEL FROM SERVER SONGS ────────────────────────────────
 function buildWheel(songs, activeIndex = 0) {
   if (!wheel) return;
   
@@ -202,7 +198,7 @@ function setCenter(s) {
   }
 }
 
-// ───── VOLUME ──────────────────────────────────────────────────────────────────
+// ───── VOLUME ───────────────────────────────────────────────────────
 if (vol && volV) {
   vol.addEventListener('input', e => {
     const value = e.target.value;
@@ -216,9 +212,6 @@ if (vol && volV) {
   });
 }
 
-<<<<<<< HEAD
-// ───── AUX HELPERS ────────────────────────────────────────────────────────────
-=======
 // Aux holder volume control
 if (auxVol && auxVolV) {
   auxVol.addEventListener('input', e => {
@@ -249,10 +242,9 @@ if (resumeBtn) {
 }
 
 // ───── AUX HELPERS ──────────────────────────────────────────────────
->>>>>>> 3aa24c6 (Add instructions popup, aux controls, and custom cursor)
 function isAux() { return aux && aux.id === myId; }
 
-// ───── SOCKET EVENTS ──────────────────────────────────────────────────────────
+// ───── SOCKET EVENTS ────────────────────────────────────────────────
 socket.on('connect', () => {
   myId = socket.id;
 });
@@ -262,14 +254,14 @@ socket.on('init', data => {
   buildWheel(currentSongs);
 });
 
-// ───── START VOTING ───────────────────────────────────────────────────────────
+// ───── START VOTING ─────────────────────────────────────────────────
 if (startBtn) {
   startBtn.addEventListener('click', () => {
     socket.emit('startVoting');
   });
 }
 
-// ───── PLAY SONG FROM SERVER ──────────────────────────────────────────────────
+// ───── PLAY SONG FROM SERVER ────────────────────────────────────────
 socket.on('now', ({ song }) => {
   const a = ensureAudio();
   
@@ -288,20 +280,7 @@ socket.on('now', ({ song }) => {
   a.play().catch(err => console.log("Play failed (expected on first load):", err));
 });
 
-// ───── PAUSE / RESUME (AUX ONLY) ──────────────────────────────────────────────
-document.getElementById('pauseBtn')?.addEventListener('click', () => {
-  if (!isAux()) return;
-  audio?.pause();
-  socket.emit('pause');
-});
-
-document.getElementById('resumeBtn')?.addEventListener('click', () => {
-  if (!isAux()) return;
-  audio?.play().catch(() => {});
-  socket.emit('resume');
-});
-
-// Sync pause/resume for everyone
+// ───── PAUSE / RESUME SYNC ──────────────────────────────────────────
 socket.on('pause', () => audio?.pause());
 socket.on('resume', () => audio?.play().catch(() => {}));
 
@@ -319,7 +298,7 @@ socket.on('volume', vol => {
   }
 });
 
-// ───── EFFECTS ────────────────────────────────────────────────────────────────
+// ───── EFFECTS ──────────────────────────────────────────────────────
 function clearEffects() {
   effectNodes.forEach(n => {
     try { n.disconnect(); } catch (_) {}
@@ -377,7 +356,7 @@ socket.on('effect', fx => {
   else if (fx === 'reset') clearEffects();
 });
 
-// ───── VOTING ─────────────────────────────────────────────────────────────────
+// ───── VOTING ───────────────────────────────────────────────────────
 function renderVotingButtons() {
   if (!votingButtons) return;
   votingButtons.innerHTML = '';
@@ -404,7 +383,7 @@ socket.on('vote', () => {
   renderVotingButtons();
 });
 
-// ───── RATING ─────────────────────────────────────────────────────────────────
+// ───── RATING ───────────────────────────────────────────────────────
 if (rateDock) {
   const buttons = rateDock.querySelectorAll('button');
   buttons.forEach(btn => {
@@ -444,7 +423,7 @@ if (rateDock) {
   });
 }
 
-// ───── PLAYERS LIST ───────────────────────────────────────────────────────────
+// ───── PLAYERS LIST ─────────────────────────────────────────────────
 function renderPlayers() {
   if (!playersList) return;
   playersList.innerHTML = '';
@@ -469,7 +448,7 @@ function renderPlayers() {
   });
 }
 
-// ───── STATE HANDLER ──────────────────────────────────────────────────────────
+// ───── STATE HANDLER ────────────────────────────────────────────────
 socket.on('state', data => {
   myId = socket.id;
   aux = data.aux;
@@ -495,9 +474,9 @@ function updateUI() {
     }
   }
   
-  // Show/hide aux controls
+  // Show/hide aux controls (only for aux holder during playing phase)
   if (auxControls) {
-    if (isAux()) {
+    if (isAux() && playing) {
       auxControls.style.display = 'block';
     } else {
       auxControls.style.display = 'none';
@@ -534,7 +513,7 @@ function updateUI() {
       ratingDock.classList.add('active');
       // Reset button states
       if (rateDock) {
-        myRating = null; // Reset rating state
+        myRating = null;
         rateDock.querySelectorAll('button').forEach(b => {
           b.classList.remove('selected');
           b.style.opacity = '1';
@@ -546,12 +525,6 @@ function updateUI() {
     }
   }
   
-  // SHOW AUX CONTROLS ONLY FOR THE REAL AUX HOLDER
-  const auxControls = document.getElementById('auxControls');
-  if (auxControls) {
-    auxControls.style.display = (isAux() && playing) ? 'block' : 'none';
-  }
-  
   // Update players list
   renderPlayers();
   
@@ -561,7 +534,7 @@ function updateUI() {
   }
 }
 
-// ───── COUNTDOWN ──────────────────────────────────────────────────────────────
+// ───── COUNTDOWN ────────────────────────────────────────────────────
 socket.on('countdown', d => {
   if (!countdown) return;
   
@@ -584,8 +557,7 @@ socket.on('countdown', d => {
   }, 1000);
 });
 
-
-// ───── RESULT ─────────────────────────────────────────────────────────────────
+// ───── RESULT ───────────────────────────────────────────────────────
 socket.on('result', res => {
   let msg = '';
   if (res === 'keep') msg = '✅ KEEP! Same aux!';
@@ -596,7 +568,7 @@ socket.on('result', res => {
   showNotification(msg, 3000);
 });
 
-// ───── NOTIFICATION SYSTEM ────────────────────────────────────────────────────
+// ───── NOTIFICATION SYSTEM ──────────────────────────────────────────
 function showNotification(message, duration = 3000) {
   const existing = document.querySelector('.notification');
   if (existing) existing.remove();
@@ -627,30 +599,9 @@ function showNotification(message, duration = 3000) {
   }, duration);
 }
 
-// ───── SHUFFLE: NEW RANDOM 5 FROM FULL LIBRARY ───────────────────────────────
+// ───── SHUFFLE SONGS (AUX only) ─────────────────────────────────────
 document.getElementById('shuffleBtn')?.addEventListener('click', () => {
   if (!isAux()) return;
-
-  socket.emit('requestNewSongs');  // Tell server to pick 5 brand new songs
-});
-
-socket.on('newSongs', ({ songs }) => {
-  currentSongs = songs;
-  buildWheel(songs);
-  // If someone is currently AUX, restart their song from the new list
-  if (aux && songs.length > 0) {
-    socket.emit('playSong', songs[0]);  // optional: auto-play first song
-  }
-});
-
-// Initialize empty wheel on page load
-if (wheel) {
-  buildWheel([]);
-}
-
-// ───── SHUFFLE SONGS (AUX only) ───────────────────────────────────────────────
-document.getElementById('shuffleBtn')?.addEventListener('click', () => {
-  if (!aux || aux.id !== myId) return; // only real AUX can shuffle
   
   const shuffled = [...currentSongs].sort(() => Math.random() - 0.5);
   currentSongs = shuffled;
@@ -665,3 +616,21 @@ socket.on('shuffle', songs => {
   buildWheel(songs);
 });
 
+// ───── REQUEST NEW SONGS ────────────────────────────────────────────
+document.getElementById('shuffleBtn')?.addEventListener('click', () => {
+  if (!isAux()) return;
+  socket.emit('requestNewSongs');
+});
+
+socket.on('newSongs', ({ songs }) => {
+  currentSongs = songs;
+  buildWheel(songs);
+  if (aux && songs.length > 0) {
+    socket.emit('playSong', songs[0]);
+  }
+});
+
+// Initialize empty wheel on page load
+if (wheel) {
+  buildWheel([]);
+}
