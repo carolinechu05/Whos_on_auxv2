@@ -75,6 +75,7 @@ nameInput.addEventListener('keypress', (e) => {
 function safeGet(id) { return document.getElementById(id); }
 const pauseBtn  = safeGet('pauseBtn');
 const resumeBtn = safeGet('resumeBtn');
+const shuffleBtn = safeGet('shuffleBtn');
 
 // ───── INIT AUDIO ───────────────────────────────────────────────────
 function initAudio() {
@@ -96,11 +97,13 @@ document.addEventListener('click', () => {
 
 // ───── AUDIO ELEMENT ────────────────────────────────────────────────
 let audio = null;
-let progressInterval = null;
 
 function ensureAudio() {
   if (audio) return audio;
-  audio = new Audio();
+  if (!audioCtx) initAudio();
+  
+  audio = document.createElement('audio');
+  audio.style.display = 'none';
   audio.crossOrigin = "anonymous";
   document.body.appendChild(audio);
 
@@ -118,29 +121,15 @@ function ensureAudio() {
     if (bar) bar.style.width = '0%';
   });
 
+  source = audioCtx.createMediaElementSource(audio);
+  source.connect(gainNode);
+
   return audio;
 }
 
 function reconnectAudioGraph() {
-  if (!audioCtx) return;
-  if (!audio) return;
-  
-  // Create new source from audio element if needed
-  if (!source) {
-    source = audioCtx.createMediaElementSource(audio);
-  }
-  
-  // Disconnect and reconnect
+  if (!source || !gainNode) return;
   try { source.disconnect(); } catch (_) {}
-  
-  // Clear any effects and reconnect to gain
-  if (effectNodes.length > 0) {
-    effectNodes.forEach(n => {
-      try { n.disconnect(); } catch (_) {}
-    });
-    effectNodes = [];
-  }
-  
   source.connect(gainNode);
 }
 
@@ -206,6 +195,7 @@ if (vol && volV) {
     if (gainNode) {
       gainNode.gain.value = value / 100;
     }
+    // Don't emit volume changes from non-aux holders
     if (isAux()) {
       socket.emit('volume', value / 100);
     }
@@ -215,9 +205,13 @@ if (vol && volV) {
 // Aux holder volume control
 if (auxVol && auxVolV) {
   auxVol.addEventListener('input', e => {
-    auxVolV.textContent = `${e.target.value}%`;
-    if (gainNode) gainNode.gain.value = e.target.value / 100;
-    socket.emit('volume', e.target.value / 100);
+    const value = e.target.value;
+    auxVolV.textContent = `${value}%`;
+    if (gainNode) {
+      gainNode.gain.value = value / 100;
+    }
+    // Emit volume change to all clients
+    socket.emit('volume', value / 100);
   });
 }
 
@@ -241,6 +235,20 @@ if (resumeBtn) {
   });
 }
 
+// Shuffle button - shuffles the songs on the wheel
+if (shuffleBtn) {
+  shuffleBtn.addEventListener('click', () => {
+    if (!isAux()) return;
+    
+    const shuffled = [...currentSongs].sort(() => Math.random() - 0.5);
+    currentSongs = shuffled;
+    buildWheel(shuffled);
+    
+    // Tell everyone else to shuffle too
+    socket.emit('shuffle', shuffled);
+  });
+}
+
 // ───── AUX HELPERS ──────────────────────────────────────────────────
 function isAux() { return aux && aux.id === myId; }
 
@@ -261,28 +269,54 @@ if (startBtn) {
   });
 }
 
-// ───── PLAY SONG FROM SERVER ────────────────────────────────────────
-socket.on('now', ({ song }) => {
+// ───── PLAYBACK ─────────────────────────────────────────────────────
+socket.on('now', ({ song, timestamp }) => {
   const a = ensureAudio();
-  
-  // Initialize audio context and source if needed
-  if (audioCtx && !source) {
-    source = audioCtx.createMediaElementSource(a);
-    reconnectAudioGraph();
-  }
-  
-  if (a.src !== song.audioUrl) {
-    a.src = song.audioUrl;
-    a.currentTime = 0;
-  }
+  a.src = song.audioUrl;
+  a.play().catch(() => {});
 
-  // This will now work because user has interacted (voted, clicked Start, etc.)
-  a.play().catch(err => console.log("Play failed (expected on first load):", err));
+  const syncPlayback = () => {
+    reconnectAudioGraph();
+    const delay = (Date.now() - timestamp) / 1000;
+    const target = Math.max(0, delay);
+    if (Math.abs(a.currentTime - target) > 0.1) {
+      a.currentTime = target;
+    }
+  };
+
+  a.addEventListener('loadedmetadata', syncPlayback, { once: true });
+  setTimeout(syncPlayback, 2000);
+  
+  setCenter(song);
+  if (nowPlaying) nowPlaying.textContent = `♪ ${song.title} - ${song.artist}`;
+  
+  const songIndex = currentSongs.findIndex(s => s.id === song.id);
+  if (songIndex >= 0) {
+    document.querySelectorAll('.tile').forEach((tile, i) => {
+      tile.classList.toggle('active', i === songIndex);
+    });
+  }
 });
 
-// ───── PAUSE / RESUME SYNC ──────────────────────────────────────────
-socket.on('pause', () => audio?.pause());
-socket.on('resume', () => audio?.play().catch(() => {}));
+socket.on('pause', () => {
+  if (audio) audio.pause();
+});
+
+socket.on('resume', ({ timestamp }) => {
+  const a = ensureAudio();
+  reconnectAudioGraph();
+  const delay = (Date.now() - timestamp) / 1000;
+  a.currentTime += delay;
+  if (a.readyState >= 2) {
+    a.play().catch(() => {});
+  } else {
+    const playWhenReady = () => {
+      a.play().catch(() => {});
+      a.removeEventListener('canplay', playWhenReady);
+    };
+    a.addEventListener('canplay', playWhenReady);
+  }
+});
 
 socket.on('seek', time => {
   if (audio) audio.currentTime = time;
@@ -296,6 +330,12 @@ socket.on('volume', vol => {
     }
     if (volV) volV.textContent = Math.round(vol * 100) + '%';
   }
+});
+
+// ───── SHUFFLE SYNC ─────────────────────────────────────────────────
+socket.on('shuffle', songs => {
+  currentSongs = songs;
+  buildWheel(songs);
 });
 
 // ───── EFFECTS ──────────────────────────────────────────────────────
@@ -383,7 +423,7 @@ socket.on('vote', () => {
   renderVotingButtons();
 });
 
-// ───── RATING ───────────────────────────────────────────────────────
+// ───── RATING (WITH DESELECT FEATURE) ───────────────────────────────
 if (rateDock) {
   const buttons = rateDock.querySelectorAll('button');
   buttons.forEach(btn => {
@@ -410,7 +450,7 @@ if (rateDock) {
       const decision = score >= 3 ? 'keep' : 'pass';
       socket.emit('rate', decision);
       
-      // Update UI
+      // Update UI - dim others, highlight selected
       buttons.forEach(b => {
         b.classList.remove('selected');
         b.style.opacity = '0.4';
@@ -474,7 +514,7 @@ function updateUI() {
     }
   }
   
-  // Show/hide aux controls (only for aux holder during playing phase)
+  // Show/hide aux controls - only show during playing phase
   if (auxControls) {
     if (isAux() && playing) {
       auxControls.style.display = 'block';
@@ -598,37 +638,6 @@ function showNotification(message, duration = 3000) {
     setTimeout(() => notif.remove(), 300);
   }, duration);
 }
-
-// ───── SHUFFLE SONGS (AUX only) ─────────────────────────────────────
-document.getElementById('shuffleBtn')?.addEventListener('click', () => {
-  if (!isAux()) return;
-  
-  const shuffled = [...currentSongs].sort(() => Math.random() - 0.5);
-  currentSongs = shuffled;
-  buildWheel(shuffled);
-  
-  // Tell everyone else to shuffle too
-  socket.emit('shuffle', shuffled);
-});
-
-socket.on('shuffle', songs => {
-  currentSongs = songs;
-  buildWheel(songs);
-});
-
-// ───── REQUEST NEW SONGS ────────────────────────────────────────────
-document.getElementById('shuffleBtn')?.addEventListener('click', () => {
-  if (!isAux()) return;
-  socket.emit('requestNewSongs');
-});
-
-socket.on('newSongs', ({ songs }) => {
-  currentSongs = songs;
-  buildWheel(songs);
-  if (aux && songs.length > 0) {
-    socket.emit('playSong', songs[0]);
-  }
-});
 
 // Initialize empty wheel on page load
 if (wheel) {

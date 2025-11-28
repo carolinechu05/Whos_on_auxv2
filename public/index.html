@@ -31,6 +31,7 @@
       If you're on aux, you'll see controls appear to:<br>
       • Click song tiles on the wheel to play them<br>
       • Pause/Resume playback<br>
+      • Shuffle songs<br>
       • Adjust volume for everyone</p>
       
       <div style="background:#0a0f1e;padding:12px;border-radius:6px;margin-top:12px;border:1px solid var(--blue2);">
@@ -68,27 +69,28 @@
         <span id="volV">80%</span>
       </div>
     </header>
+    
+    <!-- AUX CONTROLS - FIXED: Single div with progress bar -->
     <div id="auxControls" style="display:none; margin:20px; text-align:center;">
-      <div id="auxControls" style="display:none; margin:20px; text-align:center;">
-  <h3 style="color:var(--blue);margin-bottom:12px;">🎧 You're on AUX</h3>
-  
-  <!-- Progress bar from her version -->
-  <div style="width:280px; margin:10px auto; height:6px; background:#0a0f1e; border:2px solid #3654ff; border-radius:6px; overflow:hidden;">
-    <div id="progressBar" style="width:0%; height:100%; background:#3654ff; transition:width 0.2s linear;"></div>
-  </div>
-  
-  <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
-    <button id="pauseBtn" class="effect-btn">⏸ Pause</button>
-    <button id="resumeBtn" class="effect-btn">▶ Resume</button>
-    <button id="shuffleBtn" class="effect-btn">Shuffle Songs</button>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <label style="color:var(--mut);">Volume:</label>
-      <input id="auxVol" type="range" min="0" max="100" value="80" style="width:120px;">
-      <span id="auxVolV" style="color:var(--ink);min-width:40px;">80%</span>
+      <h3 style="color:var(--blue);margin-bottom:12px;">🎧 You're on AUX</h3>
+      
+      <!-- Progress bar -->
+      <div style="width:280px; margin:10px auto; height:6px; background:#0a0f1e; border:2px solid #3654ff; border-radius:6px; overflow:hidden;">
+        <div id="progressBar" style="width:0%; height:100%; background:#3654ff; transition:width 0.2s linear;"></div>
+      </div>
+      
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
+        <button id="pauseBtn" class="effect-btn">⏸ Pause</button>
+        <button id="resumeBtn" class="effect-btn">▶ Resume</button>
+        <button id="shuffleBtn" class="effect-btn">🔀 Shuffle Songs</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="color:var(--mut);">Volume:</label>
+          <input id="auxVol" type="range" min="0" max="100" value="80" style="width:120px;">
+          <span id="auxVolV" style="color:var(--ink);min-width:40px;">80%</span>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-    </div>
+    
     <!-- Countdown & Status -->
     <div id="statusBar" class="status-bar">
       <span id="countdown"></span>
@@ -118,7 +120,7 @@
 
     <!-- Rating dock -->
     <footer class="dock" id="ratingDock">
-      <div class="dock-title">Rate the AUX Holder (Double Click)</div>
+      <div class="dock-title">Rate the AUX Holder (Click to select, click again to deselect)</div>
       <div class="faces" id="rateDock">
         <button data-score="1" aria-label="1/5">😖</button>
         <button data-score="2" aria-label="2/5">😕</button>

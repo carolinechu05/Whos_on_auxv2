@@ -93,6 +93,7 @@ function broadcastState() {
 io.on('connection', socket => {
   const id = socket.id;
   socket.join(gameState.room);
+  
   socket.on('requestNewSongs', () => {
     if (gameState.aux?.id !== socket.id) return; // only AUX can trigger
     selectRandomSongs(); // this already emits 'init' with 5 new songs
@@ -164,6 +165,15 @@ io.on('connection', socket => {
   socket.on('play', song => {
     if (gameState.aux?.id !== id) return;
     io.to(gameState.room).emit('now', { song, timestamp: Date.now() });
+  });
+
+  // ---- SHUFFLE SONGS (NEW) ----
+  socket.on('shuffle', shuffledSongs => {
+    if (gameState.aux?.id !== id) return;
+    // Update server's current songs to match what aux shuffled
+    gameState.currentSongs = shuffledSongs;
+    // Broadcast to all other clients
+    socket.broadcast.emit('shuffle', shuffledSongs);
   });
 
   // Aux-only controls (pause, resume, seek, volume, effect)
@@ -256,7 +266,7 @@ async function endVoting() {
 
     gameState.playing = true;
     broadcastState();
-    // CHANGED: 240 seconds = 4 minutes
+    // 4 MINUTES = 240 seconds (YOUR PARTNER'S CHANGE - ALREADY IMPLEMENTED)
     io.to(gameState.room).emit('countdown', { phase: 'playing', seconds: 240 });
     setTimeout(startRating, 240_000);
   } else {
@@ -302,7 +312,7 @@ function startPlayingAgain() {
   gameState.rating = false;
   gameState.playing = true;
   broadcastState();
-  // CHANGED: 240 seconds = 4 minutes
+  // 4 MINUTES = 240 seconds (YOUR PARTNER'S CHANGE - ALREADY IMPLEMENTED)
   io.to(gameState.room).emit('countdown', { phase: 'playing', seconds: 240 });
   setTimeout(startRating, 240_000);
 }
