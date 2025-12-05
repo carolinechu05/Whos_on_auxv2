@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>AUX Wheel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="data:,">
+</head>
+<body>
+<!-- Instructions Panel -->
+<div class="voting-panel" id="instructionsPanel" style="display:none;">
+  <button class="btn" id="closeInstructions" style="position:absolute;top:15px;right:15px;padding:8px 12px;font-size:18px;line-height:1;z-index:10;">✕</button>
+  
+  <h3 style="padding-right:50px;margin-bottom:20px;">🎵 HOW TO PLAY WHO'S ON AUX</h3>
+  
+  <div style="text-align:left;color:var(--mut);line-height:1.6;">
+    <p><strong style="color:var(--blue);">1. JOIN THE GAME</strong><br>
+    Enter your name to join the wheel. Your name will appear on the spinning wheel.</p>
+    
+    <p><strong style="color:var(--blue);">2. VOTE FOR AUX CONTROL</strong><br>
+    Click on other users when prompted to vote for them. The person with the most votes gets the aux!</p>
+    
+    <p><strong style="color:var(--blue);">3. THE WINNER CONTROLS THE MUSIC</strong><br>
+    Whoever is on aux gets to pick a song. </p>
+    
+    <p><strong style="color:var(--blue);">4. RATE THE MUSIC</strong><br>
+    Use the emoji reactions at the bottom (😖 😕 😐 🙂 🤩) to rate the chosen song as it plays.</p>
+    
+    <p><strong style="color:var(--blue);">5. AUX HOLDER POWERS</strong><br>
+    If you're on aux, you'll see controls appear to:<br>
+    • Click song tiles on the wheel to play them<br>
+    • Pause/Resume playback<br>
+    • Shuffle songs<br>
+    • Adjust volume for everyone</p>
+    
+    <div style="background:#0a0f1e;padding:12px;border-radius:6px;margin-top:12px;border:1px solid var(--blue2);">
+      <strong style="color:#ffeb3b;">⚡ PRO TIPS:</strong><br>
+      • Vote wisely - they control the vibe!<br>
+      • Watch the countdown for voting time<br>
+      • React honestly to songs<br>
+      • Aux holder rotates based on votes
+    </div>
+  </div>
+</div>
+
+  <!-- Join Screen -->
+  <div id="joinScreen" class="join-screen active">
+    <div class="join-box">
+      <h1>🎵 AUX WHEEL</h1>
+      <p>Enter your name to join the game</p>
+      <input type="text" id="nameInput" placeholder="Your name" maxlength="15" />
+      <button class="btn" id="joinBtn">Join Game</button>
+    </div>
+    <span class="join-instructions-link" id="joinInstructionsBtn">How to Play</span>
+  </div>
+
+  <!-- Main Game -->
+  <div id="gameScreen" class="game-screen">
+    <header class="topbar">
+      <div class="topbar-left">
+        <strong>AUX WHEEL</strong>
+        <span id="auxInfo" class="aux-info"></span>
+      </div>
+      <div class="ctl">
+        <button class="btn" id="start">Start Voting</button>
+        <button class="btn" id="instructionsBtn">How to Play</button>
+      </div>
+    </header>
+    
+    <!-- AUX CONTROLS -->
+    <div id="auxControls" style="display:none; margin:20px; text-align:center;">
+      <h3 style="color:var(--blue);margin-bottom:12px;">🎧 You're on AUX</h3>
+      
+      <!-- Progress bar -->
+      <div style="text-align:center; margin-bottom:4px;">
+        <small style="color:var(--mut); font-size:11px;">Drag or click to seek</small>
+      </div>
+      <div style="position:relative; width:280px; margin:10px auto;">
+        <div id="progressBarContainer" style="width:100%; height:12px; background:#0a0f1e; border:2px solid #3654ff; border-radius:6px; cursor:pointer; position:relative;">
+          <div id="progressBar" style="width:0%; height:100%; background:#3654ff; transition:width 0.2s linear; pointer-events:none;"></div>
+        </div>
+        <div id="progressThumb" style="position:absolute; top:50%; left:0%; width:18px; height:18px; background:#fff; border:3px solid #3654ff; border-radius:50%; transform:translate(-50%, -50%); cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,0.4); transition:left 0.2s linear; z-index:10;"></div>
+      </div>
+      
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
+        <button id="pauseBtn" class="effect-btn">⏸ Pause</button>
+        <button id="resumeBtn" class="effect-btn">▶ Resume</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="color:var(--mut);">Volume:</label>
+          <input id="auxVol" type="range" min="0" max="100" value="80" style="width:120px;">
+          <span id="auxVolV" style="color:var(--ink);min-width:40px;">80%</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Countdown & Status -->
+    <div id="statusBar" class="status-bar">
+      <span id="countdown"></span>
+      <span id="nowPlaying"></span>
+    </div>
+
+    <main class="stage">
+      <div class="wheel-wrap">
+        <div class="disk" aria-hidden="true"></div>
+        <div class="wheel" id="wheel"></div>
+      </div>
+
+      <!-- Center hub (song info) -->
+      <div class="hub">
+        <div class="avatar" id="auxAvatar">?</div>
+        <div class="song" id="songName">—</div>
+        <div class="artist" id="artistName">—</div>
+        <div class="by" id="byLine">Click Start to begin</div>
+      </div>
+    </main>
+
+    <button id="shuffleBtn" class="effect-btn">🔀 Shuffle Songs</button>
+
+    <!-- Voting Phase -->
+    <div id="votingPanel" class="voting-panel">
+      <h3>Vote for the next AUX holder</h3>
+      <div id="votingButtons" class="voting-buttons"></div>
+    </div>
+
+    <!-- Rating dock -->
+    <footer class="dock" id="ratingDock">
+      <div class="dock-title">Rate the AUX Holder (Click to select, click again to deselect)</div>
+      <div class="faces" id="rateDock">
+        <button data-score="1" aria-label="1/5">😖</button>
+        <button data-score="2" aria-label="2/5">😕</button>
+        <button data-score="3" aria-label="3/5">😐</button>
+        <button data-score="4" aria-label="4/5">🙂</button>
+        <button data-score="5" aria-label="5/5">🤩</button>
+      </div>
+    </footer>
+
+    <!-- Players List Sidebar -->
+    <aside class="players-sidebar">
+      <h3>Players</h3>
+      <ul id="playersList"></ul>
+    </aside>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+  
+  <!-- INSTRUCTIONS SCRIPT -->
+  <script>
+    (function() {
+      const instructionsPanel = document.getElementById('instructionsPanel');
+      const joinInstructionsBtn = document.getElementById('joinInstructionsBtn');
+      const instructionsBtn = document.getElementById('instructionsBtn');
+      const closeInstructions = document.getElementById('closeInstructions');
+      
+      function showInstructions(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (instructionsPanel) {
+          instructionsPanel.style.display = 'block';
+          instructionsPanel.classList.add('active');
+        }
+      }
+      
+      function hideInstructions(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (instructionsPanel) {
+          instructionsPanel.style.display = 'none';
+          instructionsPanel.classList.remove('active');
+        }
+      }
+      
+      if (joinInstructionsBtn) {
+        joinInstructionsBtn.onclick = showInstructions;
+      }
+      
+      if (instructionsBtn) {
+        instructionsBtn.onclick = showInstructions;
+      }
+      
+      if (closeInstructions) {
+        closeInstructions.onclick = hideInstructions;
+      }
+      
+      if (instructionsPanel) {
+        instructionsPanel.onclick = function(e) {
+          if (e.target === instructionsPanel) {
+            hideInstructions();
+          }
+        };
+      }
+    })();
+  </script>
+</body>
+</html>

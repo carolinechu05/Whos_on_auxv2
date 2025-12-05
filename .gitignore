@@ -1,0 +1,48 @@
+# macOS garbage
+.DS_Store
+*.DS_Store
+.localized
+
+# Node / npm
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Your personal folders / huge files you never want on GitHub
+Desktop/
+Downloads/
+Documents/
+Movies/
+Music/
+Pictures/
+Library/
+Applications/
+*.mov
+*.mp4
+*.mkv
+*.avi
+*.zip
+*.dmg
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.heic
+*.mp3
+*.wav
+
+# IDE / editor junk
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Logs & caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated
+Thumbs.db
+ehthumbs.db
