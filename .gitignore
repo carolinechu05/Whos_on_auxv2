@@ -24,12 +24,9 @@ Applications/
 *.zip
 *.dmg
 *.pdf
-*.png
-*.jpg
 *.jpeg
 *.gif
 *.heic
-*.mp3
 *.wav
 
 # IDE / editor junk
