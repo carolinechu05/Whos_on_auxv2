@@ -28,6 +28,10 @@ const auxControls = document.getElementById('auxControls');
 const auxVol = document.getElementById('auxVol');
 const auxVolV = document.getElementById('auxVolV');
 
+// Live Reactions Elements
+const liveReactions = document.getElementById('liveReactions');
+const reactionFeed = document.getElementById('reactionFeed');
+
 // 3) CLIENT-SIDE SOCKET CONNECTION
 const socket = io();
 
@@ -47,7 +51,109 @@ let players = {};
 let voteCounts = {};
 let currentSongs = [];
 let myRating = null;
-let countdownInterval = null;  // Track countdown interval
+let countdownInterval = null;
+let myLastReaction = null; // Track user's current reaction
+
+// ───── LIVE REACTIONS SYSTEM ──────────────────────────────────────────
+function initLiveReactions() {
+  if (!liveReactions) return;
+  
+  const reactionButtons = liveReactions.querySelectorAll('.reaction-btn');
+  
+  reactionButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!playing) return; // Only react during playback
+      
+      const reaction = btn.dataset.reaction;
+      
+      // Toggle off if clicking same reaction
+      if (myLastReaction === reaction) {
+        myLastReaction = null;
+        btn.classList.remove('selected');
+        socket.emit('removeReaction');
+      } else {
+        // Remove previous selection
+        reactionButtons.forEach(b => b.classList.remove('selected'));
+        
+        // Select new reaction
+        btn.classList.add('selected');
+        myLastReaction = reaction;
+        
+        // Send to server
+        socket.emit('liveReaction', {
+          emoji: reaction,
+          name: myName
+        });
+        
+        // Show local floating reaction
+        createFloatingReaction(reaction, 
+          window.innerWidth / 2 + (Math.random() - 0.5) * 200,
+          window.innerHeight - 150
+        );
+      }
+    });
+  });
+}
+
+// Initialize reactions when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initLiveReactions);
+} else {
+  initLiveReactions();
+}
+
+// Create floating reaction animation
+function createFloatingReaction(emoji, x, y) {
+  const reaction = document.createElement('div');
+  reaction.className = 'floating-reaction';
+  reaction.textContent = emoji;
+  reaction.style.left = x + 'px';
+  reaction.style.top = y + 'px';
+  document.body.appendChild(reaction);
+  
+  // Remove after animation
+  setTimeout(() => reaction.remove(), 3000);
+}
+
+// Add reaction to feed
+function addReactionToFeed(data) {
+  if (!reactionFeed) return;
+  
+  const item = document.createElement('div');
+  item.className = 'reaction-feed-item';
+  item.innerHTML = `
+    <span class="reaction-feed-emoji">${data.emoji}</span>
+    <span><strong>${data.name}</strong> reacted</span>
+  `;
+  
+  reactionFeed.insertBefore(item, reactionFeed.firstChild);
+  
+  // Keep only last 5 reactions
+  while (reactionFeed.children.length > 5) {
+    reactionFeed.removeChild(reactionFeed.lastChild);
+  }
+  
+  // Remove after 8 seconds
+  setTimeout(() => {
+    if (item.parentNode) {
+      item.style.opacity = '0';
+      setTimeout(() => item.remove(), 300);
+    }
+  }, 8000);
+}
+
+// Listen for reactions from other users
+socket.on('liveReaction', data => {
+  // Show floating reaction at random position
+  createFloatingReaction(
+    data.emoji,
+    Math.random() * window.innerWidth,
+    window.innerHeight - 100 - Math.random() * 100
+  );
+  
+  // Add to feed
+  addReactionToFeed(data);
+});
 
 // ───── CURSOR TRACKING & GLOW ──────────────────────────────────────────────
 const otherCursors = new Map();
@@ -82,13 +188,11 @@ function initCursorGlow() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initCursorGlow);
 } else {
-  // DOM already loaded
   initCursorGlow();
 }
 
 // Update glow position with mouse movement
 document.addEventListener('mousemove', (e) => {
-  // Try to initialize if it doesn't exist yet
   if (!cursorGlow && document.body) {
     initCursorGlow();
   }
@@ -105,7 +209,7 @@ document.addEventListener('mousemove', (e) => {
 let lastCursorSend = 0;
 document.addEventListener('mousemove', (e) => {
   const now = Date.now();
-  if (now - lastCursorSend > 50) { // Send every 50ms max
+  if (now - lastCursorSend > 50) {
     lastCursorSend = now;
     socket.emit('cursor', { x: e.clientX, y: e.clientY });
   }
@@ -120,7 +224,6 @@ function updateOtherCursor(data) {
   let cursorEl = otherCursors.get(data.id);
   
   if (!cursorEl) {
-    // Create new cursor element
     cursorEl = document.createElement('div');
     cursorEl.className = 'other-cursor';
     cursorEl.innerHTML = `
@@ -131,7 +234,6 @@ function updateOtherCursor(data) {
     otherCursors.set(data.id, cursorEl);
   }
   
-  // Update position
   cursorEl.style.left = data.x + 'px';
   cursorEl.style.top = data.y + 'px';
 }
@@ -310,7 +412,7 @@ function setCenter(s) {
     if (aux) {
       by.textContent = `Selected by ${aux.name}`;
     } else {
-      by.textContent = 'Click Start to begin';
+      by.textContent = '';
     }
   }
 }
@@ -323,7 +425,6 @@ if (vol && volV) {
     if (gainNode) {
       gainNode.gain.value = value / 100;
     }
-    // Don't emit volume changes from non-aux holders
     if (isAux()) {
       socket.emit('volume', value / 100);
     }
@@ -338,7 +439,6 @@ if (auxVol && auxVolV) {
     if (gainNode) {
       gainNode.gain.value = value / 100;
     }
-    // Emit volume change to all clients
     socket.emit('volume', value / 100);
   });
 }
@@ -363,12 +463,10 @@ if (resumeBtn) {
   });
 }
 
-// Shuffle button - requests new random songs from server
+// Shuffle button
 if (shuffleBtn) {
   shuffleBtn.addEventListener('click', () => {
     if (!isAux()) return;
-    
-    // Request new songs from server (which has full music list)
     socket.emit('requestNewSongs');
   });
 }
@@ -386,7 +484,6 @@ socket.on('init', data => {
   buildWheel(currentSongs);
 });
 
-// Handle new songs from server
 socket.on('newSongs', data => {
   currentSongs = data.songs || [];
   buildWheel(currentSongs);
@@ -539,18 +636,12 @@ function renderVotingButtons() {
     
     btn.textContent = `${p.name} (${count} vote${count !== 1 ? 's' : ''})`;
     
-    // Allow vote changes - click to vote or change vote
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       if (!voting) return;
       
-      // Remove selection from all buttons first
       votingButtons.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
-      
-      // Add selection to clicked button
       btn.classList.add('selected');
-      
-      // Send vote to server
       socket.emit('vote', p.id);
     });
     
@@ -571,7 +662,6 @@ if (rateDock) {
       
       const score = parseInt(btn.dataset.score);
       
-      // If clicking the same button, deselect it
       if (myRating === score) {
         myRating = null;
         buttons.forEach(b => {
@@ -579,17 +669,14 @@ if (rateDock) {
           b.style.opacity = '1';
           b.style.transform = 'scale(1)';
         });
-        // Notify server to remove rating
         socket.emit('removeRating');
         return;
       }
       
-      // Otherwise, select this rating
       myRating = score;
       const decision = score >= 3 ? 'keep' : 'pass';
       socket.emit('rate', decision);
       
-      // Update UI - dim others, highlight selected
       buttons.forEach(b => {
         b.classList.remove('selected');
         b.style.opacity = '0.4';
@@ -638,10 +725,8 @@ socket.on('state', data => {
   voteCounts = data.voteCounts || {};
   votes = data.votes || {};
 
-  // Clean up cursors for disconnected players
   cleanupDisconnectedCursors(players);
 
-  // Handle countdown for late joiners
   if (data.countdown) {
     startCountdownFromState(data.countdown);
   }
@@ -650,7 +735,6 @@ socket.on('state', data => {
 });
 
 function startCountdownFromState(countdownData) {
-  // Clear any existing countdown
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
@@ -663,7 +747,6 @@ function startCountdownFromState(countdownData) {
               : countdownData.phase === 'playing' ? 'Music'
               : 'Rating';
 
-  // Initial display
   countdown.textContent = `${phase} ends in ${formatTime(sec)}`;
 
   countdownInterval = setInterval(() => {
@@ -692,12 +775,37 @@ function updateUI() {
     }
   }
   
-  // Show/hide aux controls - only show during playing phase
+  // Show/hide aux controls
   if (auxControls) {
     if (isAux() && playing) {
       auxControls.style.display = 'block';
     } else {
       auxControls.style.display = 'none';
+    }
+  }
+  
+  // Show/hide live reactions - only during playback
+  if (liveReactions) {
+    if (playing && !isAux()) {
+      liveReactions.classList.add('active');
+    } else {
+      liveReactions.classList.remove('active');
+      // Reset reaction selection when not playing
+      myLastReaction = null;
+      liveReactions.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+    }
+  }
+  
+  // Show/hide reaction feed
+  if (reactionFeed) {
+    if (playing) {
+      reactionFeed.classList.add('active');
+    } else {
+      reactionFeed.classList.remove('active');
+      // Clear feed when not playing
+      reactionFeed.innerHTML = '';
     }
   }
   
@@ -729,7 +837,6 @@ function updateUI() {
   if (ratingDock) {
     if (rating && !isAux()) {
       ratingDock.classList.add('active');
-      // Reset button states
       if (rateDock) {
         myRating = null;
         rateDock.querySelectorAll('button').forEach(b => {
@@ -743,10 +850,8 @@ function updateUI() {
     }
   }
   
-  // Update players list
   renderPlayers();
   
-  // Update center display
   if (aux && currentSongs.length > 0) {
     setCenter(currentSongs[0]);
   }
@@ -754,7 +859,6 @@ function updateUI() {
 
 // ───── COUNTDOWN ──────────────────────────────────────────────────────────────
 socket.on('countdown', d => {
-  // Clear any existing countdown to prevent duplicates
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
@@ -767,7 +871,6 @@ socket.on('countdown', d => {
               : d.phase === 'playing' ? 'Music'
               : 'Rating';
 
-  // Initial display
   countdown.textContent = `${phase} ends in ${formatTime(sec)}`;
 
   countdownInterval = setInterval(() => {
@@ -830,7 +933,6 @@ function showNotification(message, duration = 3000) {
 socket.on('auxLeft', data => {
   showNotification(data.message, 3000);
   
-  // Stop any playing audio
   if (audio) {
     audio.pause();
     audio.currentTime = 0;

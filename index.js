@@ -61,6 +61,7 @@ const gameState = {
 
 const votes = new Map();
 const voteCounts = new Map();
+const playerReactions = new Map(); // Track current reactions per player
 
 // Helper: select 5 random songs
 function selectRandomSongs() {
@@ -75,7 +76,6 @@ function recomputeCounts() {
   for (const v of votes.values()) if (v) voteCounts.set(v, (voteCounts.get(v) || 0) + 1);
 }
 
-// Helper: broadcast full state
 // Helper: broadcast full state
 function broadcastState() {
   const stateData = {
@@ -157,7 +157,33 @@ io.on('connection', socket => {
     socket.broadcast.emit('cursor', { id, name: gameState.players[id].name, ...pos });
   });
 
-  // START VOTING
+  // ── LIVE REACTIONS ──
+  socket.on('liveReaction', data => {
+    if (!gameState.players[id]) return;
+    if (!gameState.playing) return; // Only allow reactions during playback
+    
+    // Store player's current reaction
+    playerReactions.set(id, data.emoji);
+    
+    // Broadcast to all other players
+    socket.broadcast.emit('liveReaction', {
+      id,
+      name: gameState.players[id].name,
+      emoji: data.emoji
+    });
+  });
+
+  // ── REMOVE REACTION ──
+  socket.on('removeReaction', () => {
+    if (!gameState.players[id]) return;
+    
+    // Remove player's reaction
+    playerReactions.delete(id);
+    
+    // Optionally broadcast removal (if you want to show when reactions are removed)
+    // socket.broadcast.emit('reactionRemoved', { id });
+  });
+
   // START VOTING
   socket.on('startVoting', () => {
     if (gameState.voting || gameState.playing || gameState.rating) return;
@@ -168,6 +194,7 @@ io.on('connection', socket => {
     
     votes.clear(); 
     voteCounts.clear();
+    playerReactions.clear(); // Clear reactions when new round starts
     for (const p of Object.values(gameState.players)) p.voted = false;
 
     broadcastState();
@@ -175,7 +202,7 @@ io.on('connection', socket => {
     setTimeout(endVoting, 30_000);
   });
 
-// ── VOTE ──
+  // ── VOTE ──
   socket.on('vote', async targetId => {
     if (!gameState.voting) return;
     if (!gameState.players[targetId]) return;
@@ -217,7 +244,7 @@ io.on('connection', socket => {
     });
   });
 
-// RATING
+  // RATING
   socket.on('rate', async decision => {
     if (!gameState.rating || gameState.players[id]?.rated || gameState.aux?.id === id) return;
     if (!gameState.aux) return; // Safety check
@@ -263,6 +290,7 @@ io.on('connection', socket => {
     
     delete gameState.players[id];
     votes.delete(id);
+    playerReactions.delete(id); // Clean up reactions
     recomputeCounts();
     
     // Scenario 1: If no players left, reset the entire game
@@ -325,6 +353,9 @@ async function endVoting() {
     gameState.currentPhase = 'playing';
     gameState.countdownEnd = Date.now() + 240000;
     
+    // Clear reactions when new playback starts
+    playerReactions.clear();
+    
     broadcastState();
     io.to(gameState.room).emit('countdown', { phase: 'playing', seconds: 240 });
     setTimeout(startRating, 240_000);
@@ -338,6 +369,9 @@ function startRating() {
   gameState.rating = true;
   gameState.currentPhase = 'rating';
   gameState.countdownEnd = Date.now() + 30000;
+
+  // Clear reactions when rating phase starts
+  playerReactions.clear();
 
   for (const pid in gameState.players) {
     const p = gameState.players[pid];
@@ -378,6 +412,9 @@ function startPlayingAgain() {
   gameState.currentPhase = 'playing';
   gameState.countdownEnd = Date.now() + 240000;
   
+  // Clear reactions when new playback starts
+  playerReactions.clear();
+  
   broadcastState();
   io.to(gameState.room).emit('countdown', { phase: 'playing', seconds: 240 });
   setTimeout(startRating, 240_000);
@@ -392,6 +429,7 @@ function startNewVoting() {
   
   votes.clear(); 
   voteCounts.clear();
+  playerReactions.clear(); // Clear reactions when voting starts
   for (const p of Object.values(gameState.players)) p.voted = false;
   
   selectRandomSongs();
@@ -411,6 +449,7 @@ function resetGame() {
   
   votes.clear(); 
   voteCounts.clear();
+  playerReactions.clear(); // Clear all reactions
   for (const p of Object.values(gameState.players)) {
     p.voted = false; p.rated = false; p.keep = null;
   }
